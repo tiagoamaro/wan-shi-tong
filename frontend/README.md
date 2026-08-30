@@ -1,6 +1,6 @@
 # Frontend (Alpine.js + Tailwind CSS)
 
-Static single-page interface for Wan Shi Tong. Runs directly in any web browser without a backend server or build pipeline.
+Static single-page interface for Wan Shi Tong. Runs without a backend or build pipeline.
 
 ## Tech Stack
 
@@ -8,7 +8,17 @@ Static single-page interface for Wan Shi Tong. Runs directly in any web browser 
 - **Alpine.js**: Lightweight reactive UI state and client-side logic loaded via CDN (`unpkg.com`).
 - **Tailwind CSS**: Utility-first styling loaded via CDN script (`cdn.tailwindcss.com` or `unpkg.com`).
 
-Dependencies are loaded over CDN with standard browser caching, requiring zero local build tools, Node.js packages, or local dev servers.
+Dependencies are loaded over CDN with standard browser caching, requiring zero local build tools or Node.js packages.
+
+## Run
+
+From the project root:
+
+```sh
+make serve
+```
+
+Requires `python3`. Open [http://localhost:9999/frontend/](http://localhost:9999/frontend/). Browsers block automatic `library.json` loading from `file://`; the file picker remains available when opened directly.
 
 ## Features
 

@@ -31,3 +31,11 @@ Fields for search, grouping, and lists:
 The JSON file is the API. Any UI can read and write it — browser, native, CLI, a text editor.
 
 Sync is whoever copies that file: a secret GitHub gist, a private repo, S3, a USB stick. The library does not own sync. Online hosts are optional backups, not a runtime dependency.
+
+## Run
+
+```sh
+make -C frontend serve
+```
+
+Requires `python3`. Open [http://localhost:9999/frontend/](http://localhost:9999/frontend/). A local server lets the browser load `library.json`; browsers block that request when the page is opened with `file://`.
