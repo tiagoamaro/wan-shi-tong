@@ -460,13 +460,13 @@
     </div>
   </div>
 
-  <!-- Add Item Modal -->
+  <!-- Add/Edit Item Modal -->
   <div x-show="showAddModal" x-cloak @keydown.escape.window="showAddModal = false" class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="add-item-title">
     <div @click="showAddModal = false" class="fixed inset-0 bg-midnight-violet/70 backdrop-blur-sm"></div>
     <div class="relative min-h-screen flex items-center justify-center p-4">
-      <form @submit.prevent="addItem()" class="relative w-full max-w-3xl rounded-2xl bg-alabaster shadow-lg [&_input]:px-3 [&_input]:py-2 [&_select]:px-3 [&_select]:py-2 [&_textarea]:px-3 [&_textarea]:py-2">
+      <form @submit.prevent="saveItem()" class="relative w-full max-w-3xl rounded-2xl bg-alabaster shadow-lg [&_input]:px-3 [&_input]:py-2 [&_select]:px-3 [&_select]:py-2 [&_textarea]:px-3 [&_textarea]:py-2">
         <div class="bg-midnight-violet text-alabaster px-6 py-4 flex items-center justify-between border-b border-black-cherry/60">
-          <h2 id="add-item-title" class="font-bold">Add to library</h2>
+          <h2 id="add-item-title" class="font-bold" x-text="editingItem ? 'Edit item' : 'Add to library'"></h2>
           <button type="button" @click="showAddModal = false" class="text-grey-olive hover:text-alabaster p-1 rounded-md transition" aria-label="Close"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
         </div>
         <div class="p-7 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5 max-h-[75vh] overflow-y-auto text-sm">
@@ -486,7 +486,7 @@
           <label class="block"><span class="font-medium">External URL</span><input x-model="newItem.external_url" type="url" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></label>
           <label class="block sm:col-span-2"><span class="font-medium">Image URL or local path</span><input x-model="newItem.image_url" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></label>
         </div>
-        <div class="px-6 py-4 border-t border-grey-olive/20 flex justify-end gap-3"><button type="button" @click="showAddModal = false" class="px-4 py-2 text-sm text-charcoal">Cancel</button><button type="submit" class="px-4 py-2 rounded-md bg-black-cherry text-alabaster text-sm font-medium hover:bg-black-cherry/90">Add item</button></div>
+        <div class="px-6 py-4 border-t border-grey-olive/20 flex justify-end gap-3"><button type="button" @click="showAddModal = false" class="px-4 py-2 text-sm text-charcoal">Cancel</button><button type="submit" class="px-4 py-2 rounded-md bg-black-cherry text-alabaster text-sm font-medium hover:bg-black-cherry/90" x-text="editingItem ? 'Save changes' : 'Add item'"></button></div>
       </form>
     </div>
   </div>
@@ -585,7 +585,7 @@
               <!-- Right Column: Metadata & Description -->
               <div class="sm:col-span-2 space-y-4">
                 <div>
-                  <h2 class="text-xl font-bold text-midnight-violet leading-tight" x-text="getItemTitle(selectedItem)"></h2>
+                  <div class="flex items-start justify-between gap-3"><h2 class="text-xl font-bold text-midnight-violet leading-tight" x-text="getItemTitle(selectedItem)"></h2><button @click="openEditModal()" class="shrink-0 px-3 py-1.5 rounded-md bg-black-cherry text-alabaster text-xs font-medium hover:bg-black-cherry/90">Edit</button></div>
                   <p x-show="selectedItem.original_title && selectedItem.original_title !== getItemTitle(selectedItem)" 
                      class="text-xs text-charcoal italic mt-0.5"
                      x-text="`Original: ${selectedItem.original_title}`"></p>

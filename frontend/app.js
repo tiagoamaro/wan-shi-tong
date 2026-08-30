@@ -22,6 +22,7 @@ function mediaLibrary() {
     // Modal state
     selectedItem: null,
     showAddModal: false,
+    editingItem: null,
     newItem: blankItem(),
 
     async initApp() {
@@ -233,10 +234,21 @@ function mediaLibrary() {
 
     openAddModal() {
       this.newItem = blankItem();
+      this.editingItem = null;
       this.showAddModal = true;
     },
 
-    addItem() {
+    openEditModal() {
+      const item = this.selectedItem;
+      if (!item) return;
+
+      this.newItem = itemForm(item);
+      this.editingItem = item;
+      this.closeModal();
+      this.showAddModal = true;
+    },
+
+    saveItem() {
       const value = key => this.newItem[key].trim();
       const title = value('title');
       if (!title) {
@@ -244,22 +256,17 @@ function mediaLibrary() {
         return;
       }
 
-      const creators = value('creators').split(',').map(creator => creator.trim()).filter(Boolean);
-      const labels = value('labels').split(',').map(label => label.trim()).filter(Boolean);
-      const item = {
-        kind: this.newItem.kind,
-        title,
-        ...(creators.length && { creators }),
-        ...optionalItemFields(this.newItem, value),
-        ...(labels.length && { labels })
-      };
-
-      if (this.newItem.series_index !== '') item.series_index = Number(this.newItem.series_index);
-
-      this.items.push(item);
+      const item = itemFromForm(this.newItem, value, title);
+      if (this.editingItem) {
+        formItemFields().forEach(field => delete this.editingItem[field]);
+        Object.assign(this.editingItem, item);
+      } else {
+        this.items.push(item);
+      }
       this.isDirty = true;
       this.errorMessage = '';
       this.showAddModal = false;
+      this.editingItem = null;
       this.newItem = blankItem();
     },
 
@@ -304,6 +311,33 @@ function blankItem() {
     external_url: '',
     image_path: '',
     image_url: ''
+  };
+}
+
+function formItemFields() {
+  return ['kind', 'title', 'creators', 'original_title', 'release_date', 'language', 'series', 'series_index', 'labels', 'description', 'imdb_id', 'openlibrary_id', 'isbn', 'external_url', 'image_path', 'image_url'];
+}
+
+function itemForm(item) {
+  return {
+    ...blankItem(),
+    ...item,
+    title: item.title || item.name || item.original_title || '',
+    creators: Array.isArray(item.creators) ? item.creators.join(', ') : (item.creators || ''),
+    labels: Array.isArray(item.labels) ? item.labels.join(', ') : (item.labels || '')
+  };
+}
+
+function itemFromForm(item, value, title) {
+  const creators = value('creators').split(',').map(creator => creator.trim()).filter(Boolean);
+  const labels = value('labels').split(',').map(label => label.trim()).filter(Boolean);
+  return {
+    kind: item.kind,
+    title,
+    ...(creators.length && { creators }),
+    ...optionalItemFields(item, value),
+    ...(labels.length && { labels }),
+    ...(item.series_index !== '' && { series_index: Number(item.series_index) })
   };
 }
 
