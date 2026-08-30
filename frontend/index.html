@@ -635,7 +635,7 @@
               <!-- Right Column: Metadata & Description -->
               <div class="sm:col-span-2 space-y-4">
                 <div>
-                  <div class="flex items-start justify-between gap-3"><h2 class="text-xl font-bold text-midnight-violet leading-tight" x-text="getItemTitle(selectedItem)"></h2><button @click="openEditModal()" class="shrink-0 px-3 py-1.5 rounded-md bg-black-cherry text-alabaster text-xs font-medium hover:bg-black-cherry/90">Edit</button></div>
+                  <div class="flex items-start justify-between gap-3"><h2 class="text-xl font-bold text-midnight-violet leading-tight" x-text="getItemTitle(selectedItem)"></h2><div class="flex shrink-0 gap-2"><button @click="openEditModal()" class="px-3 py-1.5 rounded-md bg-black-cherry text-alabaster text-xs font-medium hover:bg-black-cherry/90">Edit</button><button @click="deleteItem()" class="px-3 py-1.5 rounded-md border border-black-cherry text-black-cherry text-xs font-medium hover:bg-black-cherry hover:text-alabaster">Delete</button></div></div>
                   <p x-show="selectedItem.original_title && selectedItem.original_title !== getItemTitle(selectedItem)" 
                      class="text-xs text-charcoal italic mt-0.5"
                      x-text="`Original: ${selectedItem.original_title}`"></p>

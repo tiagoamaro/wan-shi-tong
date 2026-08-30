@@ -193,7 +193,7 @@ function mediaLibrary() {
     },
 
     get usingGist() {
-      return Boolean(this.settings.token.trim() && this.settings.gistId.trim());
+      return Boolean(this.settings.token.trim());
     },
 
     get availableSeries() {
@@ -366,7 +366,7 @@ function mediaLibrary() {
       }
     },
 
-    saveItem() {
+    async saveItem() {
       const value = key => this.newItem[key].trim();
       const title = value('title');
       if (!title) {
@@ -387,6 +387,18 @@ function mediaLibrary() {
       this.showAddModal = false;
       this.editingItem = null;
       this.newItem = blankItem();
+      if (this.settings.token.trim()) await this.syncGist();
+    },
+
+    async deleteItem() {
+      const item = this.selectedItem;
+      if (!item || !window.confirm(`Delete "${this.getItemTitle(item)}"?`)) return;
+
+      this.items = this.items.filter(candidate => candidate !== item);
+      this.isDirty = true;
+      this.saveLocal();
+      this.closeModal();
+      if (this.settings.token.trim()) await this.syncGist();
     },
 
     downloadLibrary() {
