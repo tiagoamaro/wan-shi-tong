@@ -1,5 +1,6 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const path = require('node:path');
 const vm = require('node:vm');
 const test = require('node:test');
 
@@ -12,7 +13,7 @@ function library({ token = '', items = [{ title: 'Dune', kind: 'book' }] } = {})
     GistSync: {},
     console
   };
-  vm.runInNewContext(`${fs.readFileSync('app.js', 'utf8')}; globalThis.library = mediaLibrary;`, context);
+  vm.runInNewContext(`${fs.readFileSync(path.join(__dirname, 'app.js'), 'utf8')}; globalThis.library = mediaLibrary;`, context);
   return { app: { ...context.library(), items, settings: { token, gistId: '', tmdbToken: '' } }, context };
 }
 

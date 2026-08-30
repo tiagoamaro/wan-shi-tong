@@ -1,0 +1,33 @@
+name: Validate library
+
+on:
+  push:
+    paths:
+      - 'library.json'
+      - 'schema/**'
+      - 'test/**'
+      - 'frontend/*.test.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/validate-library.yml'
+  pull_request:
+    paths:
+      - 'library.json'
+      - 'schema/**'
+      - 'test/**'
+      - 'frontend/*.test.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/validate-library.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test

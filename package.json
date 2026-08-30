@@ -1,0 +1,9 @@
+{
+  "private": true,
+  "scripts": {
+    "test": "node --test frontend/*.test.js test/*.test.js"
+  },
+  "devDependencies": {
+    "ajv": "8.17.1"
+  }
+}
