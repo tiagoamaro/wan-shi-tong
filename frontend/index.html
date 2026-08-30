@@ -25,7 +25,9 @@
   </script>
 
   <link rel="stylesheet" href="styles.css">
-  
+
+  <script defer src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.js"></script>
+
   <!-- Application Logic, before Alpine.js -->
   <script defer src="app.js"></script>
 
@@ -51,8 +53,15 @@
           </div>
         </div>
         
-        <!-- Mobile File Upload Trigger -->
+        <!-- Mobile Actions -->
         <div class="flex md:hidden items-center gap-2">
+          <button @click="openAddModal()" class="inline-flex items-center px-2.5 py-1.5 text-xs font-medium rounded bg-black-cherry hover:bg-black-cherry/80 text-alabaster transition-colors">
+            <i data-lucide="plus" class="w-3.5 h-3.5 mr-1"></i>
+            Add
+          </button>
+          <button @click="downloadLibrary()" :disabled="!isDirty" :title="isDirty ? 'Download updated library.json' : 'Library is in sync'" :class="isDirty ? 'text-alabaster hover:bg-black-cherry/80' : 'text-grey-olive cursor-not-allowed'" class="p-1.5 rounded transition-colors">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+          </button>
           <label class="cursor-pointer inline-flex items-center px-2.5 py-1.5 text-xs font-medium rounded bg-black-cherry hover:bg-black-cherry/80 text-alabaster transition-colors">
             <span>JSON</span>
             <input type="file" accept=".json,application/json" class="hidden" @change="handleFileUpload($event)">
@@ -82,7 +91,11 @@
           </button>
         </div>
 
-        <!-- Desktop File Import Button -->
+        <!-- Desktop Library Actions -->
+        <button @click="openAddModal()" class="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-black-cherry hover:bg-black-cherry/80 text-alabaster border border-alabaster/10 shadow-sm transition">
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+          <span>Add</span>
+        </button>
         <label class="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-black-cherry hover:bg-black-cherry/80 text-alabaster cursor-pointer border border-alabaster/10 shadow-sm transition">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
@@ -90,6 +103,9 @@
           <span>Load JSON</span>
           <input type="file" accept=".json,application/json" class="hidden" @change="handleFileUpload($event)">
         </label>
+        <button @click="downloadLibrary()" :disabled="!isDirty" :title="isDirty ? 'Download updated library.json' : 'Library is in sync'" :class="isDirty ? 'text-alabaster hover:bg-black-cherry/80' : 'text-grey-olive cursor-not-allowed'" class="hidden md:inline-flex p-2 rounded-md transition-colors">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+        </button>
       </div>
     </div>
   </header>
@@ -441,6 +457,37 @@
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- Add Item Modal -->
+  <div x-show="showAddModal" x-cloak @keydown.escape.window="showAddModal = false" class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="add-item-title">
+    <div @click="showAddModal = false" class="fixed inset-0 bg-midnight-violet/70 backdrop-blur-sm"></div>
+    <div class="relative min-h-screen flex items-center justify-center p-4">
+      <form @submit.prevent="addItem()" class="relative w-full max-w-3xl rounded-2xl bg-alabaster shadow-2xl border border-grey-olive/30 [&_input]:px-3 [&_input]:py-2 [&_select]:px-3 [&_select]:py-2 [&_textarea]:px-3 [&_textarea]:py-2">
+        <div class="bg-midnight-violet text-alabaster px-6 py-4 flex items-center justify-between border-b border-black-cherry/60">
+          <h2 id="add-item-title" class="font-bold">Add to library</h2>
+          <button type="button" @click="showAddModal = false" class="text-grey-olive hover:text-alabaster p-1 rounded-md transition" aria-label="Close"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+        </div>
+        <div class="p-7 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5 max-h-[75vh] overflow-y-auto text-sm">
+          <label class="block"><span class="font-medium">Type</span><select x-model="newItem.kind" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"><option value="book">Book</option><option value="movie">Movie</option></select></label>
+          <label class="block"><span class="font-medium">Title</span><input x-model="newItem.title" required class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></label>
+          <label class="block"><span class="font-medium" x-text="newItem.kind === 'movie' ? 'Director(s)' : 'Author(s)'"></span><input x-model="newItem.creators" placeholder="Comma separated" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></label>
+          <label class="block"><span class="font-medium">Original title</span><input x-model="newItem.original_title" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></label>
+          <label class="block"><span class="font-medium">Release date</span><input x-model="newItem.release_date" type="date" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></label>
+          <label class="block"><span class="font-medium">Language</span><input x-model="newItem.language" placeholder="en" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></label>
+          <label class="block"><span class="font-medium">Series</span><input x-model="newItem.series" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></label>
+          <label class="block"><span class="font-medium">Series index</span><input x-model="newItem.series_index" type="number" min="0" step="1" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></label>
+          <label class="block sm:col-span-2"><span class="font-medium">Labels</span><input x-model="newItem.labels" placeholder="Comma separated" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></label>
+          <label class="block sm:col-span-2"><span class="font-medium">Description</span><textarea x-model="newItem.description" rows="3" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></textarea></label>
+          <label x-show="newItem.kind === 'movie'" class="block"><span class="font-medium">IMDb ID</span><input x-model="newItem.imdb_id" placeholder="tt1234567" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></label>
+          <label x-show="newItem.kind === 'book'" class="block"><span class="font-medium">ISBN</span><input x-model="newItem.isbn" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></label>
+          <label x-show="newItem.kind === 'book'" class="block"><span class="font-medium">Open Library ID</span><input x-model="newItem.openlibrary_id" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></label>
+          <label class="block"><span class="font-medium">External URL</span><input x-model="newItem.external_url" type="url" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></label>
+          <label class="block sm:col-span-2"><span class="font-medium">Image URL or local path</span><input x-model="newItem.image_url" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></label>
+        </div>
+        <div class="px-6 py-4 border-t border-grey-olive/20 flex justify-end gap-3"><button type="button" @click="showAddModal = false" class="px-4 py-2 text-sm text-charcoal">Cancel</button><button type="submit" class="px-4 py-2 rounded-md bg-black-cherry text-alabaster text-sm font-medium hover:bg-black-cherry/90">Add item</button></div>
+      </form>
     </div>
   </div>
 

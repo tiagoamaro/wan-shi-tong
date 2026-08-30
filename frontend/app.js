@@ -2,6 +2,7 @@ function mediaLibrary() {
   return {
     items: [],
     isLoading: false,
+    isDirty: false,
     errorMessage: '',
     isDragging: false,
 
@@ -20,6 +21,8 @@ function mediaLibrary() {
 
     // Modal state
     selectedItem: null,
+    showAddModal: false,
+    newItem: blankItem(),
 
     async initApp() {
       // Attempt automatic loading of library.json from root or current directory
@@ -52,6 +55,7 @@ function mediaLibrary() {
       }
       this.errorMessage = '';
       this.currentPage = 1;
+      this.isDirty = false;
     },
 
     handleFileUpload(event) {
@@ -227,6 +231,49 @@ function mediaLibrary() {
       this.currentPage = 1;
     },
 
+    openAddModal() {
+      this.newItem = blankItem();
+      this.showAddModal = true;
+    },
+
+    addItem() {
+      const value = key => this.newItem[key].trim();
+      const title = value('title');
+      if (!title) {
+        this.errorMessage = 'Title is required.';
+        return;
+      }
+
+      const creators = value('creators').split(',').map(creator => creator.trim()).filter(Boolean);
+      const labels = value('labels').split(',').map(label => label.trim()).filter(Boolean);
+      const item = {
+        kind: this.newItem.kind,
+        title,
+        ...(creators.length && { creators }),
+        ...optionalItemFields(this.newItem, value),
+        ...(labels.length && { labels })
+      };
+
+      if (this.newItem.series_index !== '') item.series_index = Number(this.newItem.series_index);
+
+      this.items.push(item);
+      this.isDirty = true;
+      this.errorMessage = '';
+      this.showAddModal = false;
+      this.newItem = blankItem();
+    },
+
+    downloadLibrary() {
+      const blob = new Blob([JSON.stringify(this.items, null, 2) + '\n'], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'library.json';
+      link.click();
+      URL.revokeObjectURL(url);
+      this.isDirty = false;
+    },
+
     openModal(item) {
       this.selectedItem = item;
       document.body.style.overflow = 'hidden';
@@ -238,3 +285,31 @@ function mediaLibrary() {
     }
   }
 }
+
+function blankItem() {
+  return {
+    kind: 'book',
+    title: '',
+    original_title: '',
+    creators: '',
+    release_date: '',
+    language: '',
+    series: '',
+    series_index: '',
+    labels: '',
+    description: '',
+    imdb_id: '',
+    openlibrary_id: '',
+    isbn: '',
+    external_url: '',
+    image_path: '',
+    image_url: ''
+  };
+}
+
+function optionalItemFields(item, value) {
+  const fields = ['original_title', 'release_date', 'language', 'series', 'description', 'imdb_id', 'openlibrary_id', 'isbn', 'external_url', 'image_path', 'image_url'];
+  return Object.fromEntries(fields.map(field => [field, value(field)]).filter(([, fieldValue]) => fieldValue));
+}
+
+document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
