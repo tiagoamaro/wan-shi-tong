@@ -1,1 +1,4 @@
 library.json
+library.enriched*.json
+library.enrichment-review.json
+tmp/openlibrary-cache.json
