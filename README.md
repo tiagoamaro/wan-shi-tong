@@ -6,7 +6,7 @@ Labels, search, grouping. Sort A–Z or by release date.
 
 ## How it works
 
-One JSON file on disk. Each record is local; nothing is fetched at runtime.
+One JSON file on disk. Each record is local; nothing is fetched at runtime. Optional GitHub Gist sync can copy the file when you want it.
 
 `external_url` is optional. Movies point at IMDb. Books point at [Open Library](https://openlibrary.org) (open catalog, work/edition IDs — the IMDb analogue that is not a walled garden). IDs (`imdb_id`, `openlibrary_id`, `isbn`) stay even if the URL changes.
 
@@ -30,7 +30,7 @@ Fields for search, grouping, and lists:
 
 The JSON file is the API. Any UI can read and write it — browser, native, CLI, a text editor.
 
-Sync is whoever copies that file: a secret GitHub gist, a private repo, S3, a USB stick. The library does not own sync. Online hosts are optional backups, not a runtime dependency.
+Sync is whoever copies that file: optional GitHub Gist sync, a private repo, S3, a USB stick. Online hosts are optional backups, not a runtime dependency.
 
 ## Run
 
