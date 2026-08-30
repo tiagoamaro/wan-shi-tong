@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wan Shi Tong — Media Library</title>
+  
+  <!-- Tailwind CSS CDN with custom config matching the palette -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            alabaster: '#DCE0D9',
+            'midnight-violet': '#31081F',
+            'black-cherry': '#6B0F1A',
+            charcoal: '#595959',
+            'grey-olive': '#808F85',
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Alpine.js CDN -->
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  
+  <style>
+    [x-cloak] { display: none !important; }
+    
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #DCE0D9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #808F85;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #595959;
+    }
+  </style>
+</head>
+<body class="h-full bg-alabaster text-midnight-violet font-sans antialiased flex flex-col selection:bg-black-cherry selection:text-alabaster"
+      x-data="mediaLibrary()"
+      x-init="initApp()">
+
+  <!-- Top Navigation Header -->
+  <header class="bg-midnight-violet text-alabaster shadow-md sticky top-0 z-30 border-b border-black-cherry/50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+      <!-- Brand & Library Source -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-9 h-9 rounded-lg bg-black-cherry flex items-center justify-center font-bold text-lg text-alabaster shadow-inner border border-alabaster/20">
+            萬
+          </div>
+          <div>
+            <h1 class="text-lg font-bold tracking-tight text-alabaster leading-none">Wan Shi Tong</h1>
+            <p class="text-xs text-grey-olive mt-0.5 font-medium">He Who Knows Ten Thousand Things</p>
+          </div>
+        </div>
+        
+        <!-- Mobile File Upload Trigger -->
+        <div class="flex md:hidden items-center gap-2">
+          <label class="cursor-pointer inline-flex items-center px-2.5 py-1.5 text-xs font-medium rounded bg-black-cherry hover:bg-black-cherry/80 text-alabaster transition-colors">
+            <span>JSON</span>
+            <input type="file" accept=".json,application/json" class="hidden" @change="handleFileUpload($event)">
+          </label>
+        </div>
+      </div>
+
+      <!-- Search & File Selector Bar -->
+      <div class="flex flex-1 max-w-2xl items-center gap-2">
+        <div class="relative flex-1">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-grey-olive">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+          </div>
+          <input type="text"
+                 x-model="searchQuery"
+                 placeholder="Search titles, authors, directors, series, labels, IDs..."
+                 class="w-full pl-9 pr-8 py-1.5 text-sm rounded-md bg-alabaster/10 border border-grey-olive/30 text-alabaster placeholder-grey-olive focus:outline-none focus:ring-2 focus:ring-black-cherry focus:bg-midnight-violet/90 transition">
+          <button x-show="searchQuery" 
+                  x-cloak
+                  @click="searchQuery = ''"
+                  class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-grey-olive hover:text-alabaster">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Desktop File Import Button -->
+        <label class="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-black-cherry hover:bg-black-cherry/80 text-alabaster cursor-pointer border border-alabaster/10 shadow-sm transition">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+          </svg>
+          <span>Load JSON</span>
+          <input type="file" accept=".json,application/json" class="hidden" @change="handleFileUpload($event)">
+        </label>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1 flex flex-col">
+    
+    <!-- Status / Error Notification -->
+    <div x-show="errorMessage" x-cloak class="mb-4 p-3 bg-black-cherry/10 border border-black-cherry text-black-cherry rounded-md text-sm flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <svg class="w-4 h-4 text-black-cherry shrink-0" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+        </svg>
+        <span x-text="errorMessage"></span>
+      </div>
+      <button @click="errorMessage = ''" class="text-black-cherry hover:opacity-75">✕</button>
+    </div>
+
+    <!-- Drag & Drop Overlay / Fallback Initial State -->
+    <div x-show="items.length === 0 && !isLoading" 
+         x-cloak
+         @dragover.prevent="isDragging = true"
+         @dragleave.prevent="isDragging = false"
+         @drop.prevent="handleDrop($event)"
+         :class="{'border-black-cherry bg-alabaster/50': isDragging, 'border-grey-olive/40 bg-white/40': !isDragging}"
+         class="my-8 border-2 border-dashed rounded-xl p-10 text-center flex flex-col items-center justify-center transition-all">
+      <div class="w-16 h-16 mb-4 rounded-full bg-midnight-violet/5 flex items-center justify-center text-midnight-violet">
+        <svg class="w-8 h-8 text-black-cherry" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+        </svg>
+      </div>
+      <h3 class="text-base font-semibold text-midnight-violet">No library data loaded</h3>
+      <p class="text-sm text-charcoal mt-1 max-w-sm">
+        Place <code class="bg-alabaster px-1.5 py-0.5 rounded text-midnight-violet font-mono text-xs font-semibold">library.json</code> in the project root or load a JSON file from your machine.
+      </p>
+      <div class="mt-5">
+        <label class="cursor-pointer inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md bg-black-cherry hover:bg-black-cherry/90 text-alabaster shadow transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+          <span>Choose JSON File</span>
+          <input type="file" accept=".json,application/json" class="hidden" @change="handleFileUpload($event)">
+        </label>
+      </div>
+    </div>
+
+    <!-- Loaded Library Content -->
+    <div x-show="items.length > 0" class="flex flex-col gap-5 flex-1">
+      
+      <!-- Filter and Controls Bar -->
+      <div class="bg-white/70 backdrop-blur rounded-xl p-4 shadow-sm border border-grey-olive/20 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        
+        <!-- Left: Filters (Kind, Series, Language, Label) -->
+        <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+          
+          <!-- Kind Filter Buttons -->
+          <div class="inline-flex rounded-lg bg-alabaster/60 p-1 border border-grey-olive/30 text-xs font-medium">
+            <button @click="filterKind = 'all'; currentPage = 1"
+                    :class="filterKind === 'all' ? 'bg-midnight-violet text-alabaster shadow-sm' : 'text-charcoal hover:text-midnight-violet'"
+                    class="px-3 py-1 rounded-md transition-all">
+              All (<span x-text="items.length"></span>)
+            </button>
+            <button @click="filterKind = 'movie'; currentPage = 1"
+                    :class="filterKind === 'movie' ? 'bg-midnight-violet text-alabaster shadow-sm' : 'text-charcoal hover:text-midnight-violet'"
+                    class="px-3 py-1 rounded-md transition-all flex items-center gap-1">
+              <span>🎬 Movies</span>
+              <span class="text-[10px] opacity-75" x-text="`(${counts.movie})`"></span>
+            </button>
+            <button @click="filterKind = 'book'; currentPage = 1"
+                    :class="filterKind === 'book' ? 'bg-midnight-violet text-alabaster shadow-sm' : 'text-charcoal hover:text-midnight-violet'"
+                    class="px-3 py-1 rounded-md transition-all flex items-center gap-1">
+              <span>📚 Books</span>
+              <span class="text-[10px] opacity-75" x-text="`(${counts.book})`"></span>
+            </button>
+          </div>
+
+          <!-- Series Dropdown Filter -->
+          <div x-show="availableSeries.length > 0" class="relative">
+            <select x-model="filterSeries" @change="currentPage = 1"
+                    class="appearance-none bg-alabaster/40 border border-grey-olive/30 text-midnight-violet text-xs rounded-lg px-3 py-1.5 pr-7 hover:border-grey-olive focus:outline-none focus:ring-1 focus:ring-black-cherry">
+              <option value="">All Series</option>
+              <template x-for="s in availableSeries" :key="s">
+                <option :value="s" x-text="s"></option>
+              </template>
+            </select>
+            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-charcoal">
+              <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </div>
+          </div>
+
+          <!-- Language Dropdown Filter -->
+          <div x-show="availableLanguages.length > 1" class="relative">
+            <select x-model="filterLanguage" @change="currentPage = 1"
+                    class="appearance-none bg-alabaster/40 border border-grey-olive/30 text-midnight-violet text-xs rounded-lg px-3 py-1.5 pr-7 hover:border-grey-olive focus:outline-none focus:ring-1 focus:ring-black-cherry">
+              <option value="">All Languages</option>
+              <template x-for="l in availableLanguages" :key="l">
+                <option :value="l" x-text="l.toUpperCase()"></option>
+              </template>
+            </select>
+            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-charcoal">
+              <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </div>
+          </div>
+
+          <!-- Active Label Filter Tag (if any) -->
+          <div x-show="filterLabel" x-cloak class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black-cherry text-alabaster text-xs">
+            <span>Label: <strong x-text="filterLabel"></strong></span>
+            <button @click="filterLabel = ''; currentPage = 1" class="hover:text-grey-olive">✕</button>
+          </div>
+        </div>
+
+        <!-- Right: Sort, View Toggle, and Per Page -->
+        <div class="flex flex-wrap items-center gap-3 justify-end text-xs">
+          <!-- Sort Dropdown -->
+          <div class="flex items-center gap-1.5">
+            <span class="text-charcoal font-medium hidden sm:inline">Sort:</span>
+            <div class="relative">
+              <select x-model="sortBy" @change="currentPage = 1"
+                      class="appearance-none bg-alabaster/40 border border-grey-olive/30 text-midnight-violet text-xs rounded-lg px-3 py-1.5 pr-7 hover:border-grey-olive focus:outline-none focus:ring-1 focus:ring-black-cherry font-medium">
+                <option value="title_asc">Title (A → Z)</option>
+                <option value="title_desc">Title (Z → A)</option>
+                <option value="date_desc">Release Date (Newest)</option>
+                <option value="date_asc">Release Date (Oldest)</option>
+                <option value="series_index">Series Order</option>
+              </select>
+              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-charcoal">
+                <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Items Per Page -->
+          <div class="flex items-center gap-1.5">
+            <span class="text-charcoal font-medium hidden sm:inline">Show:</span>
+            <select x-model.number="perPage" @change="currentPage = 1"
+                    class="bg-alabaster/40 border border-grey-olive/30 text-midnight-violet text-xs rounded-lg px-2 py-1.5 hover:border-grey-olive focus:outline-none focus:ring-1 focus:ring-black-cherry font-medium">
+              <option value="12">12</option>
+              <option value="24">24</option>
+              <option value="48">48</option>
+              <option value="96">96</option>
+            </select>
+          </div>
+
+          <!-- View Mode Toggle (Grid vs List) -->
+          <div class="inline-flex rounded-lg bg-alabaster/60 p-1 border border-grey-olive/30">
+            <button @click="viewMode = 'grid'" 
+                    :class="viewMode === 'grid' ? 'bg-midnight-violet text-alabaster shadow-sm' : 'text-charcoal hover:text-midnight-violet'"
+                    class="p-1 rounded transition" 
+                    title="Grid View">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+              </svg>
+            </button>
+            <button @click="viewMode = 'list'" 
+                    :class="viewMode === 'list' ? 'bg-midnight-violet text-alabaster shadow-sm' : 'text-charcoal hover:text-midnight-violet'"
+                    class="p-1 rounded transition" 
+                    title="List View">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Result Stats & Active Filters Bar -->
+      <div class="flex items-center justify-between text-xs text-charcoal px-1">
+        <div>
+          Showing <span class="font-semibold text-midnight-violet" x-text="paginatedItems.length > 0 ? (currentPage - 1) * perPage + 1 : 0"></span>
+          to <span class="font-semibold text-midnight-violet" x-text="Math.min(currentPage * perPage, filteredItems.length)"></span>
+          of <span class="font-semibold text-midnight-violet" x-text="filteredItems.length"></span> items
+          <span x-show="filteredItems.length !== items.length" x-cloak class="text-grey-olive">
+            (filtered from <span x-text="items.length"></span> total)
+          </span>
+        </div>
+        
+        <!-- Reset All Filters -->
+        <button x-show="searchQuery || filterKind !== 'all' || filterSeries || filterLanguage || filterLabel" 
+                x-cloak
+                @click="resetFilters()"
+                class="text-black-cherry hover:underline font-medium">
+          Clear all filters
+        </button>
+      </div>
+
+      <!-- Empty Filter Results State -->
+      <div x-show="filteredItems.length === 0" x-cloak class="py-16 text-center bg-white/40 rounded-xl border border-grey-olive/20">
+        <svg class="w-12 h-12 mx-auto text-grey-olive/60 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <h4 class="font-medium text-midnight-violet">No matching items found</h4>
+        <p class="text-xs text-charcoal mt-1">Try adjusting your search terms or clearing some active filters.</p>
+        <button @click="resetFilters()" class="mt-3 inline-flex items-center px-3 py-1.5 text-xs font-medium rounded bg-black-cherry text-alabaster hover:bg-black-cherry/90">
+          Reset Filters
+        </button>
+      </div>
+
+      <!-- GRID VIEW -->
+      <div x-show="viewMode === 'grid' && paginatedItems.length > 0" 
+           class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-5">
+        <template x-for="item in paginatedItems" :key="getItemKey(item)">
+          <div @click="openModal(item)"
+               class="group relative bg-white/80 rounded-xl overflow-hidden shadow-sm hover:shadow-md border border-grey-olive/25 hover:border-black-cherry/50 transition-all duration-200 cursor-pointer flex flex-col">
+            
+            <!-- Poster / Thumbnail Container -->
+            <div class="aspect-[2/3] w-full bg-grey-olive/15 relative overflow-hidden flex items-center justify-center">
+              <template x-if="item.image_path || item.image_url">
+                <img :src="item.image_path || item.image_url" 
+                     :alt="getItemTitle(item)"
+                     loading="lazy"
+                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                     @error="$el.style.display='none'; $el.nextElementSibling.style.display='flex'">
+              </template>
+              
+              <!-- Fallback Poster Placeholder -->
+              <div class="absolute inset-0 flex flex-col items-center justify-center p-3 text-center bg-midnight-violet/5"
+                   :style="(item.image_path || item.image_url) ? 'display: none;' : 'display: flex;'">
+                <span class="text-2xl mb-1" x-text="item.kind === 'movie' ? '🎬' : '📚'"></span>
+                <span class="text-[11px] font-semibold text-charcoal line-clamp-2 leading-tight" x-text="getItemTitle(item)"></span>
+              </div>
+
+              <!-- Kind Badge Overlay -->
+              <div class="absolute top-2 left-2">
+                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider backdrop-blur-md shadow"
+                      :class="item.kind === 'movie' ? 'bg-midnight-violet/85 text-alabaster' : 'bg-black-cherry/85 text-alabaster'"
+                      x-text="item.kind">
+                </span>
+              </div>
+
+              <!-- Series Badge Overlay -->
+              <div x-show="item.series" class="absolute bottom-2 left-2 right-2">
+                <span class="block truncate px-1.5 py-0.5 rounded text-[9px] font-medium bg-midnight-violet/80 text-alabaster backdrop-blur-sm shadow">
+                  <span x-text="item.series"></span>
+                  <span x-show="item.series_index" x-text="` #${item.series_index}`"></span>
+                </span>
+              </div>
+            </div>
+
+            <!-- Card Meta Info -->
+            <div class="p-2.5 flex-1 flex flex-col justify-between">
+              <div>
+                <h3 class="font-bold text-xs text-midnight-violet group-hover:text-black-cherry line-clamp-2 leading-snug transition-colors"
+                    x-text="getItemTitle(item)"></h3>
+                
+                <p x-show="getCreators(item)" 
+                   class="text-[11px] text-charcoal line-clamp-1 mt-0.5" 
+                   x-text="getCreators(item)"></p>
+              </div>
+
+              <div class="mt-2 pt-2 border-t border-grey-olive/15 flex items-center justify-between text-[10px] text-grey-olive">
+                <span x-text="getYear(item.release_date)"></span>
+                <span x-show="item.language" class="uppercase font-mono text-[9px]" x-text="item.language"></span>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <!-- LIST VIEW -->
+      <div x-show="viewMode === 'list' && paginatedItems.length > 0" 
+           class="bg-white/80 rounded-xl shadow-sm border border-grey-olive/25 overflow-hidden divide-y divide-grey-olive/20">
+        <template x-for="item in paginatedItems" :key="getItemKey(item)">
+          <div @click="openModal(item)"
+               class="p-3.5 sm:p-4 hover:bg-alabaster/40 transition flex items-center gap-3 sm:gap-4 cursor-pointer group">
+            
+            <!-- Small Poster -->
+            <div class="w-12 h-16 sm:w-14 sm:h-20 bg-grey-olive/20 rounded-md shrink-0 overflow-hidden relative flex items-center justify-center">
+              <template x-if="item.image_path || item.image_url">
+                <img :src="item.image_path || item.image_url" 
+                     :alt="getItemTitle(item)"
+                     loading="lazy"
+                     class="w-full h-full object-cover"
+                     @error="$el.style.display='none'; $el.nextElementSibling.style.display='flex'">
+              </template>
+              <div class="absolute inset-0 flex items-center justify-center text-sm"
+                   :style="(item.image_path || item.image_url) ? 'display: none;' : 'display: flex;'">
+                <span x-text="item.kind === 'movie' ? '🎬' : '📚'"></span>
+              </div>
+            </div>
+
+            <!-- Details -->
+            <div class="flex-1 min-w-0">
+              <div class="flex flex-wrap items-center gap-2 mb-1">
+                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider"
+                      :class="item.kind === 'movie' ? 'bg-midnight-violet text-alabaster' : 'bg-black-cherry text-alabaster'"
+                      x-text="item.kind">
+                </span>
+                
+                <h3 class="font-bold text-sm text-midnight-violet group-hover:text-black-cherry truncate transition-colors"
+                    x-text="getItemTitle(item)"></h3>
+
+                <span x-show="item.original_title && item.original_title !== getItemTitle(item)"
+                      class="text-xs text-charcoal italic truncate hidden md:inline"
+                      x-text="`(${item.original_title})`"></span>
+              </div>
+
+              <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-charcoal">
+                <span x-show="getCreators(item)" class="font-medium text-midnight-violet/90" x-text="getCreators(item)"></span>
+                <span x-show="item.release_date" class="text-grey-olive" x-text="item.release_date"></span>
+                <span x-show="item.series" class="text-grey-olive">
+                  Series: <span class="font-medium text-midnight-violet" x-text="item.series"></span>
+                  <span x-show="item.series_index" x-text="`#${item.series_index}`"></span>
+                </span>
+              </div>
+
+              <!-- Labels list -->
+              <div x-show="item.labels && item.labels.length > 0" class="flex flex-wrap gap-1 mt-1.5">
+                <template x-for="l in item.labels" :key="l">
+                  <span @click.stop="filterLabel = l; currentPage = 1"
+                        class="inline-block px-1.5 py-0.2 rounded text-[10px] bg-alabaster text-midnight-violet border border-grey-olive/30 hover:border-black-cherry transition">
+                    #<span x-text="l"></span>
+                  </span>
+                </template>
+              </div>
+            </div>
+
+            <!-- Outbound icon indicator -->
+            <div class="shrink-0 text-grey-olive group-hover:text-black-cherry transition">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+              </svg>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <!-- Pagination Navigation -->
+      <div x-show="totalPages > 1" class="flex items-center justify-between bg-white/70 backdrop-blur rounded-xl px-4 py-3 border border-grey-olive/20 shadow-sm mt-2">
+        <button @click="currentPage = Math.max(1, currentPage - 1)"
+                :disabled="currentPage === 1"
+                :class="currentPage === 1 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-midnight-violet hover:text-alabaster'"
+                class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-grey-olive/30 text-xs font-semibold text-midnight-violet transition">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+          <span>Previous</span>
+        </button>
+
+        <div class="flex items-center gap-1 text-xs">
+          <span class="text-charcoal">Page</span>
+          <span class="font-bold text-midnight-violet" x-text="currentPage"></span>
+          <span class="text-charcoal">of</span>
+          <span class="font-bold text-midnight-violet" x-text="totalPages"></span>
+        </div>
+
+        <button @click="currentPage = Math.min(totalPages, currentPage + 1)"
+                :disabled="currentPage === totalPages"
+                :class="currentPage === totalPages ? 'opacity-40 cursor-not-allowed' : 'hover:bg-midnight-violet hover:text-alabaster'"
+                class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-grey-olive/30 text-xs font-semibold text-midnight-violet transition">
+          <span>Next</span>
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Item Detail Modal -->
+  <div x-show="selectedItem" 
+       x-cloak
+       class="fixed inset-0 z-50 overflow-y-auto"
+       aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+      
+      <!-- Backdrop -->
+      <div x-show="selectedItem"
+           x-transition:enter="ease-out duration-200"
+           x-transition:enter-start="opacity-0"
+           x-transition:enter-end="opacity-100"
+           x-transition:leave="ease-in duration-150"
+           x-transition:leave-start="opacity-100"
+           x-transition:leave-end="opacity-0"
+           @click="closeModal()" 
+           class="fixed inset-0 bg-midnight-violet/70 backdrop-blur-sm transition-opacity"></div>
+
+      <!-- Centering trick -->
+      <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+      <!-- Modal Card -->
+      <div x-show="selectedItem"
+           x-transition:enter="ease-out duration-200"
+           x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+           x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+           x-transition:leave="ease-in duration-150"
+           x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+           x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+           class="inline-block align-bottom bg-alabaster rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-grey-olive/30">
+        
+        <template x-if="selectedItem">
+          <div>
+            <!-- Modal Header / Bar -->
+            <div class="bg-midnight-violet text-alabaster px-6 py-4 flex items-center justify-between border-b border-black-cherry/60">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 text-xs font-bold uppercase tracking-wider rounded"
+                      :class="selectedItem.kind === 'movie' ? 'bg-black-cherry text-alabaster' : 'bg-grey-olive text-midnight-violet'"
+                      x-text="selectedItem.kind"></span>
+                <span class="text-xs text-grey-olive" x-text="selectedItem.release_date"></span>
+              </div>
+              <button @click="closeModal()" class="text-grey-olive hover:text-alabaster p-1 rounded-md transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+
+            <!-- Modal Content Body -->
+            <div class="p-6 grid grid-cols-1 sm:grid-cols-3 gap-6 max-h-[75vh] overflow-y-auto">
+              
+              <!-- Left Column: Poster & Quick Specs -->
+              <div class="sm:col-span-1 flex flex-col items-center">
+                <div class="w-full aspect-[2/3] rounded-xl overflow-hidden shadow-md bg-grey-olive/20 border border-grey-olive/30 relative flex items-center justify-center">
+                  <template x-if="selectedItem.image_path || selectedItem.image_url">
+                    <img :src="selectedItem.image_path || selectedItem.image_url" 
+                         :alt="getItemTitle(selectedItem)"
+                         class="w-full h-full object-cover"
+                         @error="$el.style.display='none'; $el.nextElementSibling.style.display='flex'">
+                  </template>
+                  <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-2 text-midnight-violet"
+                       :style="(selectedItem.image_path || selectedItem.image_url) ? 'display: none;' : 'display: flex;'">
+                    <span class="text-3xl mb-1" x-text="selectedItem.kind === 'movie' ? '🎬' : '📚'"></span>
+                    <span class="text-xs font-semibold" x-text="getItemTitle(selectedItem)"></span>
+                  </div>
+                </div>
+
+                <!-- External Links -->
+                <div class="w-full mt-4 space-y-2">
+                  <template x-if="selectedItem.external_url">
+                    <a :href="selectedItem.external_url" target="_blank" rel="noopener noreferrer"
+                       class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-black-cherry hover:bg-black-cherry/90 text-alabaster transition shadow-sm">
+                      <span>External Resource</span>
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                    </a>
+                  </template>
+                  
+                  <template x-if="selectedItem.imdb_id && !selectedItem.external_url">
+                    <a :href="`https://www.imdb.com/title/${selectedItem.imdb_id}`" target="_blank" rel="noopener noreferrer"
+                       class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-midnight-violet hover:bg-midnight-violet/90 text-alabaster transition shadow-sm">
+                      <span>IMDb: <span x-text="selectedItem.imdb_id"></span></span>
+                    </a>
+                  </template>
+
+                  <template x-if="selectedItem.openlibrary_id && !selectedItem.external_url">
+                    <a :href="`https://openlibrary.org/works/${selectedItem.openlibrary_id}`" target="_blank" rel="noopener noreferrer"
+                       class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-midnight-violet hover:bg-midnight-violet/90 text-alabaster transition shadow-sm">
+                      <span>Open Library</span>
+                    </a>
+                  </template>
+                </div>
+              </div>
+
+              <!-- Right Column: Metadata & Description -->
+              <div class="sm:col-span-2 space-y-4">
+                <div>
+                  <h2 class="text-xl font-bold text-midnight-violet leading-tight" x-text="getItemTitle(selectedItem)"></h2>
+                  <p x-show="selectedItem.original_title && selectedItem.original_title !== getItemTitle(selectedItem)" 
+                     class="text-xs text-charcoal italic mt-0.5"
+                     x-text="`Original: ${selectedItem.original_title}`"></p>
+                </div>
+
+                <!-- Creators -->
+                <div x-show="getCreators(selectedItem)" class="text-xs">
+                  <span class="font-semibold text-charcoal" x-text="selectedItem.kind === 'movie' ? 'Director(s):' : 'Author(s):'"></span>
+                  <span class="font-medium text-midnight-violet ml-1" x-text="getCreators(selectedItem)"></span>
+                </div>
+
+                <!-- Series Info -->
+                <div x-show="selectedItem.series" class="text-xs bg-white/60 p-2.5 rounded-lg border border-grey-olive/20">
+                  <span class="font-semibold text-charcoal">Series:</span>
+                  <span class="font-bold text-black-cherry ml-1" x-text="selectedItem.series"></span>
+                  <span x-show="selectedItem.series_index" class="text-charcoal ml-1" x-text="`(Book/Entry #${selectedItem.series_index})`"></span>
+                </div>
+
+                <!-- Description -->
+                <div x-show="selectedItem.description" class="space-y-1">
+                  <h4 class="text-xs font-bold text-charcoal uppercase tracking-wider">Description</h4>
+                  <p class="text-xs text-midnight-violet/90 leading-relaxed bg-white/40 p-3 rounded-lg border border-grey-olive/15 whitespace-pre-line"
+                     x-text="selectedItem.description"></p>
+                </div>
+
+                <!-- Identifiers & Specs -->
+                <div class="grid grid-cols-2 gap-2 text-[11px] pt-2 border-t border-grey-olive/20">
+                  <div x-show="selectedItem.language">
+                    <span class="text-charcoal font-medium">Language:</span>
+                    <span class="font-mono text-midnight-violet uppercase ml-1" x-text="selectedItem.language"></span>
+                  </div>
+                  <div x-show="selectedItem.isbn">
+                    <span class="text-charcoal font-medium">ISBN:</span>
+                    <span class="font-mono text-midnight-violet ml-1" x-text="selectedItem.isbn"></span>
+                  </div>
+                  <div x-show="selectedItem.imdb_id">
+                    <span class="text-charcoal font-medium">IMDb ID:</span>
+                    <span class="font-mono text-midnight-violet ml-1" x-text="selectedItem.imdb_id"></span>
+                  </div>
+                  <div x-show="selectedItem.openlibrary_id">
+                    <span class="text-charcoal font-medium">OpenLibrary ID:</span>
+                    <span class="font-mono text-midnight-violet ml-1" x-text="selectedItem.openlibrary_id"></span>
+                  </div>
+                </div>
+
+                <!-- Labels -->
+                <div x-show="selectedItem.labels && selectedItem.labels.length > 0" class="pt-2">
+                  <div class="text-[11px] font-semibold text-charcoal mb-1.5">Labels:</div>
+                  <div class="flex flex-wrap gap-1.5">
+                    <template x-for="lbl in selectedItem.labels" :key="lbl">
+                      <span @click="filterLabel = lbl; closeModal(); currentPage = 1"
+                            class="cursor-pointer px-2 py-0.5 rounded-full text-xs bg-white text-black-cherry border border-grey-olive/30 hover:border-black-cherry transition">
+                        #<span x-text="lbl"></span>
+                      </span>
+                    </template>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-midnight-violet text-grey-olive text-xs py-4 mt-auto border-t border-black-cherry/40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <div>
+        Wan Shi Tong — Personal offline media library
+      </div>
+      <div class="flex items-center gap-4 text-[11px]">
+        <span class="flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-grey-olive"></span>
+          Standalone Client
+        </span>
+        <span>•</span>
+        <span>Zero Backend Runtime</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Application Logic -->
+  <script>
+    function mediaLibrary() {
+      return {
+        items: [],
+        isLoading: false,
+        errorMessage: '',
+        isDragging: false,
+        
+        // Filter states
+        searchQuery: '',
+        filterKind: 'all',
+        filterSeries: '',
+        filterLanguage: '',
+        filterLabel: '',
+        
+        // Sorting & View
+        sortBy: 'title_asc',
+        viewMode: 'grid',
+        currentPage: 1,
+        perPage: 24,
+        
+        // Modal state
+        selectedItem: null,
+
+        async initApp() {
+          // Attempt automatic loading of library.json from root or current directory
+          this.isLoading = true;
+          try {
+            const response = await fetch('../library.json').catch(() => fetch('./library.json'));
+            if (response && response.ok) {
+              const data = await response.json();
+              this.loadData(data);
+            }
+          } catch (e) {
+            // Fetch may fail under file:// protocol without webserver, fallback gracefully
+            console.info("Automatic library.json load skipped or file protocol active. Please upload manually.");
+          } finally {
+            this.isLoading = false;
+          }
+        },
+
+        loadData(data) {
+          if (Array.isArray(data)) {
+            this.items = data;
+          } else if (data && Array.isArray(data.items)) {
+            this.items = data.items;
+          } else if (data && Array.isArray(data.records)) {
+            this.items = data.records;
+          } else {
+            this.errorMessage = "Loaded JSON format unrecognized. Expected an array of records or { items: [...] }.";
+            return;
+          }
+          this.errorMessage = '';
+          this.currentPage = 1;
+        },
+
+        handleFileUpload(event) {
+          const file = event.target.files[0];
+          if (!file) return;
+          this.readFile(file);
+        },
+
+        handleDrop(event) {
+          this.isDragging = false;
+          const file = event.dataTransfer.files[0];
+          if (file) {
+            this.readFile(file);
+          }
+        },
+
+        readFile(file) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            try {
+              const json = JSON.parse(e.target.result);
+              this.loadData(json);
+            } catch (err) {
+              this.errorMessage = "Failed to parse JSON file: " + err.message;
+            }
+          };
+          reader.readAsText(file);
+        },
+
+        // Helper getters
+        getItemTitle(item) {
+          return item.title || item.name || item.original_title || 'Untitled';
+        },
+
+        getCreators(item) {
+          if (!item.creators) return '';
+          if (Array.isArray(item.creators)) return item.creators.join(', ');
+          return item.creators;
+        },
+
+        getYear(dateStr) {
+          if (!dateStr) return '';
+          const match = String(dateStr).match(/\d{4}/);
+          return match ? match[0] : dateStr;
+        },
+
+        getItemKey(item) {
+          return item.id || item.imdb_id || item.openlibrary_id || item.isbn || (this.getItemTitle(item) + '_' + (item.release_date || ''));
+        },
+
+        get counts() {
+          return {
+            movie: this.items.filter(i => i.kind === 'movie').length,
+            book: this.items.filter(i => i.kind === 'book').length
+          };
+        },
+
+        get availableSeries() {
+          const set = new Set();
+          this.items.forEach(i => {
+            if (i.series && typeof i.series === 'string' && i.series.trim()) {
+              set.add(i.series.trim());
+            }
+          });
+          return Array.from(set).sort((a, b) => a.localeCompare(b));
+        },
+
+        get availableLanguages() {
+          const set = new Set();
+          this.items.forEach(i => {
+            if (i.language && typeof i.language === 'string' && i.language.trim()) {
+              set.add(i.language.trim().toLowerCase());
+            }
+          });
+          return Array.from(set).sort((a, b) => a.localeCompare(b));
+        },
+
+        get filteredItems() {
+          let list = [...this.items];
+
+          // 1. Kind filter
+          if (this.filterKind !== 'all') {
+            list = list.filter(item => item.kind === this.filterKind);
+          }
+
+          // 2. Series filter
+          if (this.filterSeries) {
+            list = list.filter(item => item.series === this.filterSeries);
+          }
+
+          // 3. Language filter
+          if (this.filterLanguage) {
+            list = list.filter(item => (item.language || '').toLowerCase() === this.filterLanguage.toLowerCase());
+          }
+
+          // 4. Label filter
+          if (this.filterLabel) {
+            list = list.filter(item => Array.isArray(item.labels) && item.labels.includes(this.filterLabel));
+          }
+
+          // 5. Search query
+          if (this.searchQuery.trim()) {
+            const q = this.searchQuery.trim().toLowerCase();
+            list = list.filter(item => {
+              const title = (item.title || '').toLowerCase();
+              const name = (item.name || '').toLowerCase();
+              const origTitle = (item.original_title || '').toLowerCase();
+              const creators = this.getCreators(item).toLowerCase();
+              const desc = (item.description || '').toLowerCase();
+              const series = (item.series || '').toLowerCase();
+              const imdb = (item.imdb_id || '').toLowerCase();
+              const openlib = (item.openlibrary_id || '').toLowerCase();
+              const isbn = (item.isbn || '').toLowerCase();
+              const labels = Array.isArray(item.labels) ? item.labels.join(' ').toLowerCase() : '';
+
+              return title.includes(q) ||
+                     name.includes(q) ||
+                     origTitle.includes(q) ||
+                     creators.includes(q) ||
+                     desc.includes(q) ||
+                     series.includes(q) ||
+                     imdb.includes(q) ||
+                     openlib.includes(q) ||
+                     isbn.includes(q) ||
+                     labels.includes(q);
+            });
+          }
+
+          // 6. Sorting
+          list.sort((a, b) => {
+            const titleA = (this.getItemTitle(a) || '').toLowerCase();
+            const titleB = (this.getItemTitle(b) || '').toLowerCase();
+            const dateA = a.release_date || '';
+            const dateB = b.release_date || '';
+
+            switch (this.sortBy) {
+              case 'title_asc':
+                return titleA.localeCompare(titleB);
+              case 'title_desc':
+                return titleB.localeCompare(titleA);
+              case 'date_desc':
+                return dateB.localeCompare(dateA);
+              case 'date_asc':
+                return dateA.localeCompare(dateB);
+              case 'series_index':
+                const idxA = a.series_index != null ? Number(a.series_index) : 999999;
+                const idxB = b.series_index != null ? Number(b.series_index) : 999999;
+                if (idxA !== idxB) return idxA - idxB;
+                return titleA.localeCompare(titleB);
+              default:
+                return 0;
+            }
+          });
+
+          return list;
+        },
+
+        get totalPages() {
+          return Math.ceil(this.filteredItems.length / this.perPage) || 1;
+        },
+
+        get paginatedItems() {
+          const start = (this.currentPage - 1) * this.perPage;
+          return this.filteredItems.slice(start, start + this.perPage);
+        },
+
+        resetFilters() {
+          this.searchQuery = '';
+          this.filterKind = 'all';
+          this.filterSeries = '';
+          this.filterLanguage = '';
+          this.filterLabel = '';
+          this.currentPage = 1;
+        },
+
+        openModal(item) {
+          this.selectedItem = item;
+          document.body.style.overflow = 'hidden';
+        },
+
+        closeModal() {
+          this.selectedItem = null;
+          document.body.style.overflow = '';
+        }
+      }
+    }
+  </script>
+</body>
+</html>
