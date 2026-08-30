@@ -5,6 +5,12 @@ function mediaLibrary() {
     isDirty: false,
     errorMessage: '',
     isDragging: false,
+    showSettings: false,
+    settings: { token: '', gistId: '' },
+    settingsError: '',
+    settingsSuccess: '',
+    syncStatus: 'idle',
+    syncVersion: 0,
 
     // Filter states
     searchQuery: '',
@@ -26,9 +32,21 @@ function mediaLibrary() {
     newItem: blankItem(),
 
     async initApp() {
-      // Attempt automatic loading of library.json from root or current directory
       this.isLoading = true;
       try {
+        const savedSettings = localStorage.getItem('wan_shi_tong_settings');
+        if (savedSettings) this.settings = { ...this.settings, ...JSON.parse(savedSettings) };
+        const cachedLibrary = localStorage.getItem('wan_shi_tong_library');
+        if (cachedLibrary) {
+          const cached = JSON.parse(cachedLibrary);
+          this.loadData(cached.items || cached, false);
+          this.syncVersion = cached.syncVersion || 0;
+        }
+        if (this.settings.token && this.settings.gistId) {
+          await this.loadFromGist();
+          return;
+        }
+        if (this.items.length) return;
         if (window.location.protocol === 'file:') return;
         const response = await fetch('../library.json').catch(() => fetch('./library.json'));
         if (response && response.ok) {
@@ -43,7 +61,7 @@ function mediaLibrary() {
       }
     },
 
-    loadData(data) {
+    loadData(data, persist = true) {
       if (Array.isArray(data)) {
         this.items = data;
       } else if (data && Array.isArray(data.items)) {
@@ -57,6 +75,64 @@ function mediaLibrary() {
       this.errorMessage = '';
       this.currentPage = 1;
       this.isDirty = false;
+      if (persist) this.saveLocal();
+    },
+
+    saveLocal() {
+      localStorage.setItem('wan_shi_tong_library', JSON.stringify({ version: 1, syncVersion: this.syncVersion, items: this.items }));
+    },
+
+    openSettings() {
+      this.settingsError = '';
+      this.settingsSuccess = '';
+      this.showSettings = true;
+      this.$nextTick(() => lucide.createIcons());
+    },
+
+    async saveSettings() {
+      this.settingsError = '';
+      this.settingsSuccess = '';
+      localStorage.setItem('wan_shi_tong_settings', JSON.stringify(this.settings));
+      if (this.settings.token.trim() && this.settings.gistId.trim()) {
+        await this.loadFromGist(true);
+      } else {
+        this.settingsSuccess = this.settings.token.trim() ? 'Token saved. Sync to create a private Gist.' : 'Settings saved.';
+      }
+    },
+
+    async loadFromGist(showResult = false) {
+      try {
+        this.syncStatus = 'syncing';
+        const data = await GistSync.load(this.settings);
+        this.loadData(data.items, false);
+        this.syncVersion = data.syncVersion;
+        this.saveLocal();
+        this.syncStatus = 'synced';
+        if (showResult) this.settingsSuccess = 'Connected. Library loaded from Gist.';
+      } catch (error) {
+        this.syncStatus = 'error';
+        if (showResult) this.settingsError = `Could not load Gist: ${error.message}`;
+      }
+    },
+
+    async syncGist() {
+      this.settingsError = '';
+      this.settingsSuccess = '';
+      try {
+        this.syncStatus = 'syncing';
+        const data = await GistSync.sync(this.settings, this.items, this.syncVersion);
+        this.settings.gistId = data.gistId;
+        this.items = data.items;
+        this.syncVersion = data.syncVersion;
+        localStorage.setItem('wan_shi_tong_settings', JSON.stringify(this.settings));
+        this.saveLocal();
+        this.isDirty = false;
+        this.syncStatus = 'synced';
+        this.settingsSuccess = `Synced to Gist ${data.gistId}.`;
+      } catch (error) {
+        this.syncStatus = 'error';
+        this.settingsError = `Could not sync Gist: ${error.message}`;
+      }
     },
 
     handleFileUpload(event) {
@@ -112,6 +188,10 @@ function mediaLibrary() {
         movie: this.items.filter(i => i.kind === 'movie').length,
         book: this.items.filter(i => i.kind === 'book').length
       };
+    },
+
+    get usingGist() {
+      return Boolean(this.settings.token.trim() && this.settings.gistId.trim());
     },
 
     get availableSeries() {
@@ -264,6 +344,7 @@ function mediaLibrary() {
         this.items.push(item);
       }
       this.isDirty = true;
+      this.saveLocal();
       this.errorMessage = '';
       this.showAddModal = false;
       this.editingItem = null;
