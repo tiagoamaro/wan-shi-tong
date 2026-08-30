@@ -6,7 +6,7 @@ function mediaLibrary() {
     errorMessage: '',
     isDragging: false,
     showSettings: false,
-    settings: { token: '', gistId: '' },
+    settings: { token: '', gistId: '', tmdbToken: '' },
     settingsError: '',
     settingsSuccess: '',
     syncStatus: 'idle',
@@ -350,6 +350,22 @@ function mediaLibrary() {
       }
     },
 
+    async importTmdbMetadata() {
+      const value = this.importUrl.trim();
+      if (!value) return;
+
+      this.errorMessage = '';
+      this.importStatus = 'loading';
+      try {
+        const imported = await importTmdbMovie(value, this.settings.tmdbToken);
+        this.newItem = { ...this.newItem, ...imported };
+        this.importStatus = 'done';
+      } catch (error) {
+        this.importStatus = 'idle';
+        this.errorMessage = error.message;
+      }
+    },
+
     saveItem() {
       const value = key => this.newItem[key].trim();
       const title = value('title');
@@ -409,6 +425,7 @@ function blankItem() {
     labels: '',
     description: '',
     imdb_id: '',
+    tmdb_id: '',
     openlibrary_id: '',
     isbn: '',
     external_url: '',
@@ -418,7 +435,7 @@ function blankItem() {
 }
 
 function formItemFields() {
-  return ['kind', 'title', 'creators', 'original_title', 'release_date', 'language', 'series', 'series_index', 'labels', 'description', 'imdb_id', 'openlibrary_id', 'isbn', 'external_url', 'image_path', 'image_url'];
+  return ['kind', 'title', 'creators', 'original_title', 'release_date', 'language', 'series', 'series_index', 'labels', 'description', 'imdb_id', 'tmdb_id', 'openlibrary_id', 'isbn', 'external_url', 'image_path', 'image_url'];
 }
 
 function itemForm(item) {
@@ -445,7 +462,7 @@ function itemFromForm(item, value, title) {
 }
 
 function optionalItemFields(item, value) {
-  const fields = ['original_title', 'release_date', 'language', 'series', 'description', 'imdb_id', 'openlibrary_id', 'isbn', 'external_url', 'image_path', 'image_url'];
+  const fields = ['original_title', 'release_date', 'language', 'series', 'description', 'imdb_id', 'tmdb_id', 'openlibrary_id', 'isbn', 'external_url', 'image_path', 'image_url'];
   return Object.fromEntries(fields.map(field => [field, value(field)]).filter(([, fieldValue]) => fieldValue));
 }
 

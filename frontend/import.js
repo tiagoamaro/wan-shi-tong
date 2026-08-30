@@ -52,3 +52,28 @@ function openLibraryDate(value) {
   const year = String(value || '').match(/\d{4}/)?.[0];
   return year ? `${year}-01-01` : '';
 }
+
+async function importTmdbMovie(value, token) {
+  const id = String(value).match(/(?:themoviedb\.org\/movie\/)?(\d+)/i)?.[1];
+  if (!id) throw new Error('Use a TMDb movie URL or numeric movie ID.');
+
+  const response = await fetch(`https://api.themoviedb.org/3/movie/${id}?append_to_response=credits,external_ids`, {
+    headers: { Authorization: `Bearer ${token.trim()}` }
+  });
+  if (!response.ok) throw new Error(`TMDb lookup failed (HTTP ${response.status}).`);
+
+  const movie = await response.json();
+  return {
+    kind: 'movie',
+    title: movie.title || '',
+    original_title: movie.original_title || '',
+    creators: (movie.credits?.crew || []).filter(person => person.job === 'Director').map(person => person.name).join(', '),
+    release_date: movie.release_date || '',
+    language: movie.original_language || '',
+    description: movie.overview || '',
+    imdb_id: movie.external_ids?.imdb_id || '',
+    tmdb_id: String(movie.id),
+    external_url: `https://www.themoviedb.org/movie/${movie.id}`,
+    image_url: movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : ''
+  };
+}

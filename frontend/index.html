@@ -481,9 +481,10 @@
           <div class="rounded-lg border border-grey-olive/25 bg-white/50 p-3 text-charcoal">Your library is always cached in this browser. Export a local <code class="font-mono text-xs">library.json</code> below, or connect a private GitHub Gist to sync it.</div>
           <div x-show="settingsError" x-cloak class="rounded-md bg-black-cherry/10 border border-black-cherry p-3 text-black-cherry" x-text="settingsError"></div>
           <div x-show="settingsSuccess" x-cloak class="rounded-md bg-green-100 border border-green-700 p-3 text-green-800" x-text="settingsSuccess"></div>
-          <label class="block"><span class="font-medium text-midnight-violet">GitHub personal access token</span><input x-model="settings.token" type="password" autocomplete="off" placeholder="github_pat_..." class="mt-1 w-full rounded-md border-grey-olive/30 bg-white px-3 py-2"></label>
-          <label class="block"><span class="font-medium text-midnight-violet">Gist ID <span class="font-normal text-charcoal">(optional)</span></span><input x-model="settings.gistId" placeholder="Leave blank to create a private Gist on first sync" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white px-3 py-2"></label>
-          <p class="text-xs text-charcoal">The token is stored only in this browser's local storage and needs Gist read/write access.</p>
+           <label class="block"><span class="font-medium text-midnight-violet">GitHub personal access token</span><input x-model="settings.token" type="password" autocomplete="off" placeholder="github_pat_..." class="mt-1 w-full rounded-md border-grey-olive/30 bg-white px-3 py-2"></label>
+           <label class="block"><span class="font-medium text-midnight-violet">Gist ID <span class="font-normal text-charcoal">(optional)</span></span><input x-model="settings.gistId" placeholder="Leave blank to create a private Gist on first sync" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white px-3 py-2"></label>
+           <label class="block"><span class="font-medium text-midnight-violet">TMDb API Read Access Token <span class="font-normal text-charcoal">(optional)</span></span><input x-model="settings.tmdbToken" type="password" autocomplete="off" placeholder="eyJ..." class="mt-1 w-full rounded-md border-grey-olive/30 bg-white px-3 py-2"></label>
+           <p class="text-xs text-charcoal">Tokens are stored only in this browser's local storage. The GitHub token needs Gist read/write access.</p>
         </div>
         <div class="px-6 py-4 border-t border-grey-olive/20 flex flex-wrap justify-end gap-3">
           <button x-show="!usingGist" type="button" @click="downloadLibrary()" class="px-4 py-2 text-sm text-charcoal">Download JSON</button>
@@ -504,13 +505,20 @@
           <button type="button" @click="showAddModal = false" class="text-grey-olive hover:text-alabaster p-1 rounded-md transition" aria-label="Close"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
         </div>
         <div class="p-7 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5 max-h-[75vh] overflow-y-auto text-sm">
-          <div x-show="newItem.kind === 'book'" class="sm:col-span-2 rounded-lg border border-grey-olive/25 bg-white/50 p-3">
+           <div x-show="newItem.kind === 'book'" class="sm:col-span-2 rounded-lg border border-grey-olive/25 bg-white/50 p-3">
             <label class="block"><span class="font-medium">Import from Open Library</span><span class="ml-1 text-xs text-charcoal">Fetches book metadata from a work or edition URL.</span></label>
             <div class="mt-2 flex gap-2">
               <input x-model="importUrl" type="url" placeholder="https://openlibrary.org/works/OL...W" class="min-w-0 flex-1 rounded-md border-grey-olive/30 bg-white/70">
               <button type="button" @click="importUrlMetadata()" :disabled="!importUrl.trim() || importStatus === 'loading'" class="shrink-0 rounded-md bg-midnight-violet px-3 text-xs font-medium text-alabaster hover:bg-midnight-violet/90 disabled:cursor-not-allowed disabled:opacity-60" x-text="importStatus === 'loading' ? 'Importing...' : 'Import'"></button>
-            </div>
-          </div>
+             </div>
+           </div>
+           <div x-show="newItem.kind === 'movie' && settings.tmdbToken.trim()" class="sm:col-span-2 rounded-lg border border-grey-olive/25 bg-white/50 p-3">
+             <label class="block"><span class="font-medium">Import from TMDb</span><span class="ml-1 text-xs text-charcoal">Fetches movie metadata from a TMDb movie URL or ID.</span></label>
+             <div class="mt-2 flex gap-2">
+               <input x-model="importUrl" placeholder="https://www.themoviedb.org/movie/11 or 11" class="min-w-0 flex-1 rounded-md border-grey-olive/30 bg-white/70">
+               <button type="button" @click="importTmdbMetadata()" :disabled="!importUrl.trim() || importStatus === 'loading'" class="shrink-0 rounded-md bg-midnight-violet px-3 text-xs font-medium text-alabaster hover:bg-midnight-violet/90 disabled:cursor-not-allowed disabled:opacity-60" x-text="importStatus === 'loading' ? 'Importing...' : 'Import'"></button>
+             </div>
+           </div>
           <label class="block"><span class="font-medium">Type</span><select x-model="newItem.kind" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"><option value="book">Book</option><option value="movie">Movie</option></select></label>
           <label class="block"><span class="font-medium">Title</span><input x-model="newItem.title" required class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></label>
           <label class="block"><span class="font-medium" x-text="newItem.kind === 'movie' ? 'Director(s)' : 'Author(s)'"></span><input x-model="newItem.creators" placeholder="Comma separated" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></label>
@@ -521,7 +529,8 @@
           <label class="block"><span class="font-medium">Series index</span><input x-model="newItem.series_index" type="number" min="0" step="1" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></label>
           <label class="block sm:col-span-2"><span class="font-medium">Labels</span><input x-model="newItem.labels" placeholder="Comma separated" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></label>
           <label class="block sm:col-span-2"><span class="font-medium">Description</span><textarea x-model="newItem.description" rows="3" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></textarea></label>
-          <label x-show="newItem.kind === 'movie'" class="block"><span class="font-medium">IMDb ID</span><input x-model="newItem.imdb_id" placeholder="tt1234567" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></label>
+           <label x-show="newItem.kind === 'movie'" class="block"><span class="font-medium">IMDb ID</span><input x-model="newItem.imdb_id" placeholder="tt1234567" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></label>
+           <label x-show="newItem.kind === 'movie'" class="block"><span class="font-medium">TMDb ID</span><input x-model="newItem.tmdb_id" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></label>
           <label x-show="newItem.kind === 'book'" class="block"><span class="font-medium">ISBN</span><input x-model="newItem.isbn" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></label>
           <label x-show="newItem.kind === 'book'" class="block"><span class="font-medium">Open Library ID</span><input x-model="newItem.openlibrary_id" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></label>
           <label class="block"><span class="font-medium">External URL</span><input x-model="newItem.external_url" type="url" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></label>
@@ -704,9 +713,10 @@
           <span class="w-2 h-2 rounded-full bg-grey-olive"></span>
           Standalone Client
         </span>
-        <span>•</span>
-        <span>Zero Backend Runtime</span>
-      </div>
+         <span>•</span>
+         <span>Zero Backend Runtime</span>
+         <a x-show="settings.tmdbToken.trim()" href="https://www.themoviedb.org/" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-grey-olive hover:text-alabaster"><img src="https://www.themoviedb.org/assets/v4/logos/v2/blue_short-8e7b30f73a4020692ccca9c88bafe5dcb6f8a62a4c6bc55cd9ba82bb2cd95f6c.svg" alt="TMDb" class="h-3"><span>Uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB.</span></a>
+       </div>
     </div>
   </footer>
 
