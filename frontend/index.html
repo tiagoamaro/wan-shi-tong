@@ -464,7 +464,7 @@
   <div x-show="showAddModal" x-cloak @keydown.escape.window="showAddModal = false" class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="add-item-title">
     <div @click="showAddModal = false" class="fixed inset-0 bg-midnight-violet/70 backdrop-blur-sm"></div>
     <div class="relative min-h-screen flex items-center justify-center p-4">
-      <form @submit.prevent="addItem()" class="relative w-full max-w-3xl rounded-2xl bg-alabaster shadow-2xl border border-grey-olive/30 [&_input]:px-3 [&_input]:py-2 [&_select]:px-3 [&_select]:py-2 [&_textarea]:px-3 [&_textarea]:py-2">
+      <form @submit.prevent="addItem()" class="relative w-full max-w-3xl rounded-2xl bg-alabaster shadow-lg [&_input]:px-3 [&_input]:py-2 [&_select]:px-3 [&_select]:py-2 [&_textarea]:px-3 [&_textarea]:py-2">
         <div class="bg-midnight-violet text-alabaster px-6 py-4 flex items-center justify-between border-b border-black-cherry/60">
           <h2 id="add-item-title" class="font-bold">Add to library</h2>
           <button type="button" @click="showAddModal = false" class="text-grey-olive hover:text-alabaster p-1 rounded-md transition" aria-label="Close"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
@@ -520,7 +520,7 @@
            x-transition:leave="ease-in duration-150"
            x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
            x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-           class="inline-block align-bottom bg-alabaster rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-grey-olive/30">
+            class="inline-block align-bottom bg-alabaster rounded-2xl text-left overflow-hidden shadow-lg transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
         
         <template x-if="selectedItem">
           <div>
