@@ -30,6 +30,8 @@ function mediaLibrary() {
     showAddModal: false,
     editingItem: null,
     newItem: blankItem(),
+    importUrl: '',
+    importStatus: 'idle',
 
     async initApp() {
       this.isLoading = true;
@@ -315,6 +317,8 @@ function mediaLibrary() {
     openAddModal() {
       this.newItem = blankItem();
       this.editingItem = null;
+      this.importUrl = '';
+      this.importStatus = 'idle';
       this.showAddModal = true;
     },
 
@@ -324,8 +328,26 @@ function mediaLibrary() {
 
       this.newItem = itemForm(item);
       this.editingItem = item;
+      this.importUrl = item.external_url || '';
+      this.importStatus = 'idle';
       this.closeModal();
       this.showAddModal = true;
+    },
+
+    async importUrlMetadata() {
+      const url = this.importUrl.trim();
+      if (!url) return;
+
+      this.errorMessage = '';
+      this.importStatus = 'loading';
+      try {
+        const imported = await importMediaUrl(url);
+        this.newItem = { ...this.newItem, ...imported };
+        this.importStatus = 'done';
+      } catch (error) {
+        this.importStatus = 'idle';
+        this.errorMessage = error.message;
+      }
     },
 
     saveItem() {

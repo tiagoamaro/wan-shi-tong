@@ -30,6 +30,7 @@
 
   <!-- Application Logic, before Alpine.js -->
   <script defer src="gist.js"></script>
+  <script defer src="import.js"></script>
   <script defer src="app.js"></script>
 
   <!-- Alpine.js CDN -->
@@ -503,6 +504,13 @@
           <button type="button" @click="showAddModal = false" class="text-grey-olive hover:text-alabaster p-1 rounded-md transition" aria-label="Close"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
         </div>
         <div class="p-7 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5 max-h-[75vh] overflow-y-auto text-sm">
+          <div x-show="newItem.kind === 'book'" class="sm:col-span-2 rounded-lg border border-grey-olive/25 bg-white/50 p-3">
+            <label class="block"><span class="font-medium">Import from Open Library</span><span class="ml-1 text-xs text-charcoal">Fetches book metadata from a work or edition URL.</span></label>
+            <div class="mt-2 flex gap-2">
+              <input x-model="importUrl" type="url" placeholder="https://openlibrary.org/works/OL...W" class="min-w-0 flex-1 rounded-md border-grey-olive/30 bg-white/70">
+              <button type="button" @click="importUrlMetadata()" :disabled="!importUrl.trim() || importStatus === 'loading'" class="shrink-0 rounded-md bg-midnight-violet px-3 text-xs font-medium text-alabaster hover:bg-midnight-violet/90 disabled:cursor-not-allowed disabled:opacity-60" x-text="importStatus === 'loading' ? 'Importing...' : 'Import'"></button>
+            </div>
+          </div>
           <label class="block"><span class="font-medium">Type</span><select x-model="newItem.kind" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"><option value="book">Book</option><option value="movie">Movie</option></select></label>
           <label class="block"><span class="font-medium">Title</span><input x-model="newItem.title" required class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></label>
           <label class="block"><span class="font-medium" x-text="newItem.kind === 'movie' ? 'Director(s)' : 'Author(s)'"></span><input x-model="newItem.creators" placeholder="Comma separated" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></label>
