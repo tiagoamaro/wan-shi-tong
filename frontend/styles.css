@@ -1,0 +1,17 @@
+[x-cloak] { display: none !important; }
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #DCE0D9;
+}
+::-webkit-scrollbar-thumb {
+  background: #808F85;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #595959;
+}
