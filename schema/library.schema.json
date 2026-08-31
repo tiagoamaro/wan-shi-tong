@@ -23,6 +23,7 @@
         "type": "array",
         "items": { "type": "string", "minLength": 1 }
       },
+      "completed": { "type": "boolean", "default": true },
       "description": { "type": "string", "minLength": 1 },
       "imdb_id": { "type": "string", "minLength": 1 },
       "tmdb_id": { "type": "string", "minLength": 1 },

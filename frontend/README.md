@@ -26,7 +26,8 @@ Requires `python3`. Open [http://localhost:9999/frontend/](http://localhost:9999
 - **Full Search**: Filter items across `title`, `name`, `original_title`, `creators`, `description`, `labels`, and identifiers (`imdb_id`, `openlibrary_id`, `isbn`).
 - **Filtering & Grouping**:
   - Filter by `kind` (`movie`, `book`, or all).
-  - Filter by `labels`.
+   - Filter by `labels`.
+   - Filter by read / watched status.
   - Filter / group by `series`.
   - Filter by `language`.
 - **Sorting**:

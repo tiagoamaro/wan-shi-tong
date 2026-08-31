@@ -18,6 +18,7 @@ function mediaLibrary() {
     filterSeries: '',
     filterLanguage: '',
     filterLabel: '',
+    filterCompleted: '',
 
     // Sorting & View
     sortBy: 'title_asc',
@@ -239,7 +240,13 @@ function mediaLibrary() {
         list = list.filter(item => Array.isArray(item.labels) && item.labels.includes(this.filterLabel));
       }
 
-      // 5. Search query
+      // 5. Read/watched filter. Missing values retain the schema default.
+      if (this.filterCompleted) {
+        const completed = this.filterCompleted === 'true';
+        list = list.filter(item => (item.completed !== false) === completed);
+      }
+
+      // 6. Search query
       if (this.searchQuery.trim()) {
         const q = this.searchQuery.trim().toLowerCase();
         list = list.filter(item => {
@@ -267,7 +274,7 @@ function mediaLibrary() {
         });
       }
 
-      // 6. Sorting
+      // 7. Sorting
       list.sort((a, b) => {
         const titleA = (this.getItemTitle(a) || '').toLowerCase();
         const titleB = (this.getItemTitle(b) || '').toLowerCase();
@@ -311,6 +318,7 @@ function mediaLibrary() {
       this.filterSeries = '';
       this.filterLanguage = '';
       this.filterLabel = '';
+      this.filterCompleted = '';
       this.currentPage = 1;
     },
 
@@ -442,12 +450,13 @@ function blankItem() {
     isbn: '',
     external_url: '',
     image_path: '',
-    image_url: ''
+    image_url: '',
+    completed: true
   };
 }
 
 function formItemFields() {
-  return ['kind', 'title', 'creators', 'original_title', 'release_date', 'language', 'series', 'series_index', 'labels', 'description', 'imdb_id', 'tmdb_id', 'openlibrary_id', 'isbn', 'external_url', 'image_path', 'image_url'];
+  return ['kind', 'title', 'creators', 'original_title', 'release_date', 'language', 'series', 'series_index', 'labels', 'description', 'imdb_id', 'tmdb_id', 'openlibrary_id', 'isbn', 'external_url', 'image_path', 'image_url', 'completed'];
 }
 
 function itemForm(item) {
@@ -466,6 +475,7 @@ function itemFromForm(item, value, title) {
   return {
     kind: item.kind,
     title,
+    completed: item.completed !== false,
     ...(creators.length && { creators }),
     ...optionalItemFields(item, value),
     ...(labels.length && { labels }),

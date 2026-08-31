@@ -205,7 +205,7 @@
           </div>
 
           <!-- Language Dropdown Filter -->
-          <div x-show="availableLanguages.length > 1" class="relative">
+           <div x-show="availableLanguages.length > 1" class="relative">
             <select x-model="filterLanguage" @change="currentPage = 1"
                     class="appearance-none bg-alabaster/40 border border-grey-olive/30 text-midnight-violet text-xs rounded-lg px-3 py-1.5 pr-7 hover:border-grey-olive focus:outline-none focus:ring-1 focus:ring-black-cherry">
               <option value="">All Languages</option>
@@ -216,9 +216,21 @@
             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-charcoal">
               <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
             </div>
-          </div>
+           </div>
 
-          <!-- Active Label Filter Tag (if any) -->
+           <div class="relative">
+             <select x-model="filterCompleted" @change="currentPage = 1"
+                     class="appearance-none bg-alabaster/40 border border-grey-olive/30 text-midnight-violet text-xs rounded-lg px-3 py-1.5 pr-7 hover:border-grey-olive focus:outline-none focus:ring-1 focus:ring-black-cherry">
+               <option value="">All statuses</option>
+               <option value="true">Read / watched</option>
+               <option value="false">Not read / viewed</option>
+             </select>
+             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-charcoal">
+               <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+             </div>
+           </div>
+
+           <!-- Active Label Filter Tag (if any) -->
           <div x-show="filterLabel" x-cloak class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black-cherry text-alabaster text-xs">
             <span>Label: <strong x-text="filterLabel"></strong></span>
             <button @click="filterLabel = ''; currentPage = 1" class="hover:text-grey-olive">✕</button>
@@ -291,7 +303,7 @@
         </div>
         
         <!-- Reset All Filters -->
-        <button x-show="searchQuery || filterKind !== 'all' || filterSeries || filterLanguage || filterLabel" 
+        <button x-show="searchQuery || filterKind !== 'all' || filterSeries || filterLanguage || filterLabel || filterCompleted" 
                 x-cloak
                 @click="resetFilters()"
                 class="text-black-cherry hover:underline font-medium">
@@ -523,9 +535,10 @@
           <label class="block"><span class="font-medium">Title</span><input x-model="newItem.title" required class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></label>
           <label class="block"><span class="font-medium" x-text="newItem.kind === 'movie' ? 'Director(s)' : 'Author(s)'"></span><input x-model="newItem.creators" placeholder="Comma separated" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></label>
           <label class="block"><span class="font-medium">Original title</span><input x-model="newItem.original_title" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></label>
-          <label class="block"><span class="font-medium">Release date</span><input x-model="newItem.release_date" type="date" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></label>
-          <label class="block"><span class="font-medium">Language</span><input x-model="newItem.language" placeholder="en" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></label>
-          <label class="block"><span class="font-medium">Series</span><input x-model="newItem.series" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></label>
+           <label class="block"><span class="font-medium">Release date</span><input x-model="newItem.release_date" type="date" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></label>
+           <label class="block"><span class="font-medium">Language</span><input x-model="newItem.language" placeholder="en" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></label>
+           <label class="flex items-center gap-2 pt-6"><input x-model="newItem.completed" type="checkbox" class="rounded border-grey-olive/30 text-black-cherry focus:ring-black-cherry"><span class="font-medium" x-text="newItem.kind === 'movie' ? 'Watched' : 'Read'"></span></label>
+           <label class="block"><span class="font-medium">Series</span><input x-model="newItem.series" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></label>
           <label class="block"><span class="font-medium">Series index</span><input x-model="newItem.series_index" type="number" min="0" step="1" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></label>
           <label class="block sm:col-span-2"><span class="font-medium">Labels</span><input x-model="newItem.labels" placeholder="Comma separated" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></label>
           <label class="block sm:col-span-2"><span class="font-medium">Description</span><textarea x-model="newItem.description" rows="3" class="mt-1 w-full rounded-md border-grey-olive/30 bg-white/70"></textarea></label>

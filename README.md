@@ -19,6 +19,7 @@ Fields for search, grouping, and lists:
 | `creators` | Search by author / director |
 | `series`, `series_index` | Group a franchise / book series |
 | `labels` | User grouping |
+| `completed` | Read / watched status; defaults to `true` |
 | `language` | Filter mixed libraries |
 | `release_date` | Date sort |
 | `description` | Search body |

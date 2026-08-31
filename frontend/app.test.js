@@ -40,3 +40,17 @@ test('deleting an item syncs when a Gist token is configured', async () => {
   assert.equal(app.items.length, 0);
   assert.equal(synced, 1);
 });
+
+test('completed defaults to read or watched and can filter uncompleted items', () => {
+  const { context } = library({ items: [] });
+  const app = context.library();
+  app.items = [
+    { title: 'Read book', kind: 'book' },
+    { title: 'Unwatched movie', kind: 'movie', completed: false }
+  ];
+
+  assert.equal(app.filteredItems.length, 2);
+  app.filterCompleted = 'false';
+  assert.equal(app.filteredItems.length, 1);
+  assert.equal(app.filteredItems[0].title, 'Unwatched movie');
+});

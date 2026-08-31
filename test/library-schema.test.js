@@ -17,4 +17,6 @@ test('library.json conforms to the library schema', () => {
 test('library schema rejects incomplete and unknown fields', () => {
   assert.equal(validate([{ kind: 'book' }]), false);
   assert.equal(validate([{ kind: 'book', title: 'Dune', unexpected: true }]), false);
+  assert.equal(validate([{ kind: 'movie', title: 'Dune', completed: false }]), true);
+  assert.equal(validate([{ kind: 'book', title: 'Dune', completed: 'false' }]), false);
 });
